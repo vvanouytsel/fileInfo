@@ -125,7 +125,6 @@ func main() {
 
 	if err := listPermissions(args); err != nil {
 		printError(err)
-		os.Exit(1)
-
+		return
 	}
 }
