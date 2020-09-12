@@ -3,7 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
+	"strings"
+	"text/tabwriter"
 )
 
 // Global variables
@@ -97,25 +100,51 @@ func listPermissions(paths []string) error {
 		logError("The following files did not exist: %v", filesNonExisting)
 	}
 
-	// TODO
-	// Need to fix formatting with tabs, perhaps use tabwriter?
-	// Path    Perm(text)      Perm(octat)
-	// /tmp/config-err-dvmlfH  -rw-------      600
-	// ↑       ↑       ↑
-	// The path to your file   The permissions in text format  The permissions in octat format
-	logText("Path\tPerm(text)\tPerm(octat)\n")
+	// Write the output of the file permissions
+	w := tabwriter.NewWriter(os.Stdout, 1, 1, 3, ' ', 0)
+	fmt.Fprintln(w, "Path\tPermissions(text)\tPermissions(binary)\tPermissions(octal)")
+
 	for _, path := range paths {
-		logDebug("Listing permission of: %v", path)
+		logDebug("Listing permission of: %v\n", path)
+
 		fi, err := os.Stat(path)
 		if err != nil {
 			return err
 		}
-		logText("%s\t%s\t%o\n", path, fi.Mode(), fi.Mode())
-		logVerbose("↑\t↑\t↑\n")
-		logVerbose("The path to your file\tThe permissions in text format\tThe permissions in octat format\n")
+
+		fmt.Fprintf(w, "%s\t%s\t%o\t%b\n", path, fi.Mode(), fi.Mode(), fi.Mode())
+
+	}
+	if verbose {
+		var explanationSlice = []string{"The path to your file",
+			"This is the permission of the file written in text format",
+			"This is the permission of the file written in binary format",
+			"This is the permission of the file written in octal format"}
+
+		err := explain(w, explanationSlice)
+		if err != nil {
+			return err
+		}
 	}
 
+	w.Flush()
 	return nil
+}
+
+// explain adds fancy "└>" syntax to explain the output that is listed above.
+func explain(w io.Writer, stringSlice []string) (err error) {
+	logDebug("Explaining: %v\n", stringSlice)
+
+	// The amount of values in the slice represents the amount of collumns
+	col := len(stringSlice)
+
+	for i := col; i > 0; i-- {
+		// 1 2 3 4 ...
+		fmt.Fprintf(w, strings.Repeat("|\t", i)+"\n")
+		fmt.Fprintf(w, strings.Repeat("|\t", i-1))
+		fmt.Fprintf(w, "└> %v\n", stringSlice[i-1])
+	}
+	return
 }
 
 func main() {
