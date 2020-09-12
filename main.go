@@ -36,7 +36,17 @@ func logVerbose(format string, a ...interface{}) {
 
 // logError outputs an ERROR info to STDERR and terminate the program.
 func logError(format string, a ...interface{}) {
+	fmt.Printf("ERROR: ")
 	fmt.Fprintf(os.Stderr, format, a...)
+	fmt.Printf("\n")
+	os.Exit(1)
+}
+
+// printError prints the received ERROR to STDOUT and terminates the program.
+// It takes an error type as input.
+func printError(err error) {
+	fmt.Printf("ERROR: ")
+	fmt.Println(err)
 	os.Exit(1)
 }
 
@@ -63,8 +73,29 @@ func handleFlags() (v bool, d bool, s []string) {
 	return
 }
 
+// verifyFilesExist checks if all passed files/directories exist.
+// A boolean and the list of files that did not exist is returned.
+func verifyFilesExist(files []string) (success bool, nonExistentFiles []string) {
+	success = true
+	for _, f := range files {
+		_, err := os.Stat(f)
+		if os.IsNotExist(err) {
+			logDebug("%v does not exist!\n", f)
+			nonExistentFiles = append(nonExistentFiles, f)
+			success = false
+		}
+	}
+	return
+}
+
 func listPermissions(paths []string) error {
 	logDebug("Listing permissions of paths: %v\n", paths)
+
+	success, filesNonExisting := verifyFilesExist(paths)
+	if !success {
+		// At least one of the passed files does not exist
+		logError("The following files did not exist: %v", filesNonExisting)
+	}
 
 	// TODO
 	// Need to fix formatting with tabs, perhaps use tabwriter?
@@ -92,5 +123,9 @@ func main() {
 	verbose, debug, args = handleFlags()
 	logDebug("Arguments received from CLI: %v\n", args)
 
-	listPermissions(args)
+	if err := listPermissions(args); err != nil {
+		printError(err)
+		os.Exit(1)
+
+	}
 }
