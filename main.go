@@ -8,7 +8,7 @@ import (
 
 // Global variables
 var (
-	learning, debug bool
+	verbose, debug bool
 )
 
 // log will output text to STDOUT.
@@ -25,43 +25,40 @@ func logDebug(text string) {
 	}
 }
 
-// logLearning will output learning text to STDOUT.
+// logVerbose will output verbose text to STDOUT.
 // It is used to explain the user how the program achieved its result.
-func logLearning(text string) {
-	if learning {
+func logVerbose(text string) {
+	if verbose {
 		log.Printf("L: %v\n", text)
 	}
 }
 
 // logError will output an ERROR text to STDOUT.
 func logError(text string) {
-	if learning {
-		log.Fatalf("L: %v\n", text)
-	}
+	log.Fatalf("V: %v\n", text)
 }
 
 // handleFlags will handle all the flags passed to the CLI.
-func handleFlags() (l bool, d bool, s []string) {
-	flag.BoolVar(&l, "l", false, "enable learning mode")
+func handleFlags() (v bool, d bool, s []string) {
+	flag.BoolVar(&v, "v", false, "enable verbose mode")
 	flag.BoolVar(&d, "d", false, "enable debug mode")
 	flag.Parse()
 	s = flag.Args()
 
 	// Check if arguments is only one
 	if len(flag.Args()) != 1 {
-		// log.Fatal("only specify one argument")
-		log.Fatalf("only specify one argument")
+		log.Fatalf("ERROR: only specify one argument")
 	}
 	return
 }
 
 func main() {
 	var args []string
-	learning, debug, args = handleFlags()
+	verbose, debug, args = handleFlags()
 
 	logDebug("Arguments passed: " + strings.Join(args, ","))
 	logF("This is always shown")
-	logLearning("This is shown with -l flag")
+	logVerbose("This is shown with -v flag")
 	logDebug("This is shown with -d flag")
 
 }
