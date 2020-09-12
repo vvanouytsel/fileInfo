@@ -2,7 +2,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
+	"os"
 	"strings"
 )
 
@@ -29,17 +31,25 @@ func logDebug(text string) {
 // It is used to explain the user how the program achieved its result.
 func logVerbose(text string) {
 	if verbose {
-		log.Printf("L: %v\n", text)
+		log.Printf("V: %v\n", text)
 	}
 }
 
 // logError will output an ERROR text to STDOUT.
 func logError(text string) {
-	log.Fatalf("V: %v\n", text)
+	log.Fatalf("ERROR: %v\n", text)
 }
 
 // handleFlags will handle all the flags passed to the CLI.
 func handleFlags() (v bool, d bool, s []string) {
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "%s pathToFile \n", os.Args[0])
+		flag.PrintDefaults()
+		fmt.Println("Example:")
+		fmt.Fprintf(flag.CommandLine.Output(), "%s /mnt \n", os.Args[0])
+	}
+
 	flag.BoolVar(&v, "v", false, "enable verbose mode")
 	flag.BoolVar(&d, "d", false, "enable debug mode")
 	flag.Parse()
@@ -47,7 +57,8 @@ func handleFlags() (v bool, d bool, s []string) {
 
 	// Check if arguments is only one
 	if len(flag.Args()) != 1 {
-		log.Fatalf("ERROR: only specify one argument")
+		flag.Usage()
+		logError("Please specify one argument")
 	}
 	return
 }
