@@ -3,9 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
-	"strings"
 )
 
 // Global variables
@@ -13,31 +11,26 @@ var (
 	verbose, debug bool
 )
 
-// log will output text to STDOUT.
-// It is used for text which always needs to be shown to the user.
-func logF(text string) {
-	log.Printf("%v\n", text)
-}
-
-// logDebug will output debug text to STDOUT.
+// logDebug outputs debug info to STDOUT.
 // It is used for extra logging useful to debug the program.
-func logDebug(text string) {
+func logDebug(format string, a ...interface{}) {
 	if debug {
-		log.Printf("DEBUG: %v\n", text)
+		fmt.Fprintf(os.Stdout, format, a...)
 	}
 }
 
-// logVerbose will output verbose text to STDOUT.
+// logVerbose outputs verbose info to STDOUT.
 // It is used to explain the user how the program achieved its result.
-func logVerbose(text string) {
-	if verbose {
-		log.Printf("V: %v\n", text)
+func logVerbose(format string, a ...interface{}) {
+	if debug {
+		fmt.Fprintf(os.Stdout, format, a...)
 	}
 }
 
-// logError will output an ERROR text to STDOUT.
-func logError(text string) {
-	log.Fatalf("ERROR: %v\n", text)
+// logError outputs an ERROR info to STDERR and terminate the program.
+func logError(format string, a ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, a...)
+	os.Exit(1)
 }
 
 // handleFlags will handle all the flags passed to the CLI.
@@ -55,21 +48,26 @@ func handleFlags() (v bool, d bool, s []string) {
 	flag.Parse()
 	s = flag.Args()
 
-	// Check if arguments is only one
-	if len(flag.Args()) != 1 {
+	// Check if at least 1 arguments is passed
+	if len(flag.Args()) < 1 {
 		flag.Usage()
-		logError("Please specify one argument")
+		logError("Please specify at least one path to a file")
 	}
 	return
+}
+
+func listPermissions(paths []string) {
+	logDebug("Listing permissions of paths: %v\n", paths)
+	for _, path := range paths {
+		logDebug("Listing permission of: %v", path)
+		fmt.Printf(path + "\n")
+	}
 }
 
 func main() {
 	var args []string
 	verbose, debug, args = handleFlags()
+	logDebug("Arguments received from CLI: %v\n", args)
 
-	logDebug("Arguments passed: " + strings.Join(args, ","))
-	logF("This is always shown")
-	logVerbose("This is shown with -v flag")
-	logDebug("This is shown with -d flag")
-
+	listPermissions(args)
 }
