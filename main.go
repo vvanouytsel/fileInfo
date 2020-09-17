@@ -112,16 +112,26 @@ func listPermissions(paths []string) error {
 			return err
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%o\t%b\n", path, fi.Mode(), fi.Mode(), fi.Mode())
+		fmt.Fprintf(w, "%s\t%s\t%b\t%o\n", path, fi.Mode().Perm(), fi.Mode().Perm(), fi.Mode().Perm())
 
 	}
 	if verbose {
-		var explanationSlice = []string{"The path to your file",
+		explanationSlice := []string{"The path to your file",
 			"This is the permission of the file written in text format",
 			"This is the permission of the file written in binary format",
 			"This is the permission of the file written in octal format"}
 
-		err := explain(w, explanationSlice)
+		text := `
+On a Linux system, each file and directory is assigned access rights for the owner of the file, 
+the members of a group of related users, and everybody else. Rights can be assigned to read a file, 
+to write a file, and to execute a file (i.e., run the file as a program).
+
+r(4) - Allows the contents of the directory to be listed if the x attribute is also set.
+w(2) - Allows files within the directory to be created, deleted, or renamed if the x attribute is also set.
+x(1) - Allows a directory to be entered (i.e. cd dir).
+`
+
+		err := explain(w, explanationSlice, text)
 		if err != nil {
 			return err
 		}
@@ -132,7 +142,7 @@ func listPermissions(paths []string) error {
 }
 
 // explain adds fancy "└>" syntax to explain the output that is listed above.
-func explain(w io.Writer, stringSlice []string) (err error) {
+func explain(w io.Writer, stringSlice []string, text string) (err error) {
 	logDebug("Explaining: %v\n", stringSlice)
 
 	// The amount of values in the slice represents the amount of collumns
@@ -144,6 +154,9 @@ func explain(w io.Writer, stringSlice []string) (err error) {
 		fmt.Fprintf(w, strings.Repeat("|\t", i-1))
 		fmt.Fprintf(w, "└> %v\n", stringSlice[i-1])
 	}
+
+	fmt.Printf("\n%s", text)
+
 	return
 }
 
