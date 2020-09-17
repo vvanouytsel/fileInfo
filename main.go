@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"syscall"
 	"text/tabwriter"
 )
 
@@ -91,8 +92,8 @@ func verifyFilesExist(files []string) (success bool, nonExistentFiles []string) 
 	return
 }
 
-func listPermissions(paths []string) error {
-	logDebug("Listing permissions of paths: %v\n", paths)
+func listInfo(paths []string) (err error) {
+	logDebug("Listing info of paths: %v\n", paths)
 
 	success, filesNonExisting := verifyFilesExist(paths)
 	if !success {
@@ -100,6 +101,61 @@ func listPermissions(paths []string) error {
 		logError("The following files did not exist: %v", filesNonExisting)
 	}
 
+	err = writeFileInfo(paths)
+	if err != nil {
+		return err
+	}
+
+	err = writePermissions(paths)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func writeFileInfo(paths []string) (err error) {
+	w := tabwriter.NewWriter(os.Stdout, 1, 1, 3, ' ', 0)
+	fmt.Fprintln(w, "Path\tSize(bytes)\tInode\tModify")
+
+	for _, path := range paths {
+		logDebug("Listing file info of: %v\n", path)
+
+		fi, err := os.Stat(path)
+		if err != nil {
+			return err
+		}
+
+		stat, ok := fi.Sys().(*syscall.Stat_t)
+		if !ok {
+			logError("Not a syscall.Stat_t")
+		}
+
+		fmt.Fprintf(w, "%s\t%v\t%v\t%v\n", path, fi.Size(), stat.Ino, fi.ModTime().Format("01/02/2006 - 15:04:05"))
+
+	}
+	if verbose {
+		explanationSlice := []string{"The path to your file",
+			"This is the size of the file in bytes",
+			"This is the inode address of the file",
+			"This is date since the last time the file was modified"}
+
+		text := `
+An inode is a data structure. It defines a file or a directory on the file system and is stored in the directory entry.
+Inodes point to blocks that make up a file. The inode contains all the administrative data needed to read a file.
+Every file’s metadata is stored in inodes in a table structure.
+`
+
+		err := explain(w, explanationSlice, text)
+		if err != nil {
+			return err
+		}
+	}
+
+	w.Flush()
+	return
+}
+func writePermissions(paths []string) (err error) {
 	// Write the output of the file permissions
 	w := tabwriter.NewWriter(os.Stdout, 1, 1, 3, ' ', 0)
 	fmt.Fprintln(w, "Path\tPermissions(text)\tPermissions(binary)\tPermissions(octal)")
@@ -115,6 +171,8 @@ func listPermissions(paths []string) error {
 		fmt.Fprintf(w, "%s\t%s\t%b\t%o\n", path, fi.Mode().Perm(), fi.Mode().Perm(), fi.Mode().Perm())
 
 	}
+	fmt.Println()
+
 	if verbose {
 		explanationSlice := []string{"The path to your file",
 			"This is the permission of the file written in text format",
@@ -138,7 +196,7 @@ x(1) - Allows a directory to be entered (i.e. cd dir).
 	}
 
 	w.Flush()
-	return nil
+	return
 }
 
 // explain adds fancy "└>" syntax to explain the output that is listed above.
@@ -155,7 +213,7 @@ func explain(w io.Writer, stringSlice []string, text string) (err error) {
 		fmt.Fprintf(w, "└> %v\n", stringSlice[i-1])
 	}
 
-	fmt.Printf("\n%s", text)
+	fmt.Printf("\n%s\n", text)
 
 	return
 }
@@ -164,9 +222,8 @@ func main() {
 	var args []string
 	verbose, debug, args = handleFlags()
 	logDebug("Arguments received from CLI: %v\n", args)
-
-	if err := listPermissions(args); err != nil {
+	err := listInfo(args)
+	if err != nil {
 		printError(err)
-		return
 	}
 }
