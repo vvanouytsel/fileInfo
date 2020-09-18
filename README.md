@@ -11,7 +11,7 @@ $ make run
 $ docker run --rm fileinfo:latest [ARGUMENTS]
 
 # Example
-$ docker run --rm fileinfo:latest -v /tmp
+$ docker run --rm fileinfo:latest -v /dev
 ```
 
 ## Run
@@ -19,9 +19,9 @@ $ docker run --rm fileinfo:latest -v /tmp
 # Show the help menu
 ./fileInfo -h
 
-# Show info of '/tmp/myfile'
-./fileInfo /tmp/myfile
+# Show info of '/dev'
+./fileInfo /dev
 
-# Show info of '/tmp/myfile' with verbose mode enabled
-./fileInfo -v
+# Show info of '/dev' with verbose mode enabled
+./fileInfo -v /dev
 ```
