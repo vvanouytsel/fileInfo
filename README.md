@@ -1,8 +1,19 @@
 # fileInfo
 ## Build
+### Native
 ```
 $ go build .
 ```
+
+### Docker
+```
+$ make run
+$ docker run --rm fileinfo:latest [ARGUMENTS]
+
+# Example
+$ docker run --rm fileinfo:latest -v /tmp
+```
+
 ## Run
 ```
 # Show the help menu
